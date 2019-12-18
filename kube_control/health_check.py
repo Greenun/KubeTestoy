@@ -1,6 +1,6 @@
 import os, sys
 import hashlib
-import control
+from . import control
 import requests
 
 INGRESS_HOST = os.environ.get("INGRESS_HOST", "http://34.97.132.189")
@@ -39,6 +39,7 @@ def ingress_health_check():
         }
         ret[str(idx)] = temp
         idx += 1
+    session.close()
     return ret
 
 

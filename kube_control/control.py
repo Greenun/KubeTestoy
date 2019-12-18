@@ -221,25 +221,6 @@ def update_deployment(project_name: str, images: list, ports: dict = {}, envs: d
             )
         )
         # prev_deployment.spec.template.spec.containers.append(new_container)
-        # payload = {
-        #     'op': 'add',
-        #     'path': f'/spec/template/spec/containers/',
-        #     'value': client.V1Container(
-        #         name=add_p.split(":")[0],
-        #         image=REGISTRY_PREFIX+add_p,
-        #         readiness_probe=client.V1Probe(
-        #             initial_delay_seconds=10,
-        #             period_seconds=20,
-        #             tcp_socket=client.V1TCPSocketAction(port=client.V1ContainerPort(8080))
-        #         )
-        #     )
-        # }
-        # v1.patch_namespaced_deployment(
-        #     name=deployment_name,
-        #     namespace=namespace,
-        #     body=payload
-        # )
-        # init_add += 1
 
     for replace_p in replace_patch:
         if replace_p[1].split(':')[1] == 'latest':

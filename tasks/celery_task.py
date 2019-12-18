@@ -35,16 +35,11 @@ class CallbackTask(Task):
 
 @celery.task(name="tasks.update", base=CallbackTask)
 def update_task(*args, **kwargs):
-    import time
-    # time.sleep(3)
-    # print("args: ", args)
-    # print("kwargs: ", kwargs)
-
     project_name = kwargs.get('project_name')
     images = kwargs.get('images')
 
     result = control.update_deployment(project_name, images)
-    return result.status
+    return result
 
 
 @celery.task(name="tasks.create", base=CallbackTask)
@@ -56,12 +51,13 @@ def create_task(*args, **kwargs):
     envs = kwargs.get('envs')
 
     result = control.create_sequence(project_name, images, ports, envs)
-    return result.status
+    return result
 
 
 @celery.task(name="tasks.delete", base=CallbackTask)
 def delete_task(*args, **kwargs):
+    # project_name: str
     project_name = kwargs.get('project_name')
 
     result = control.delete_sequence(project_name)
-    return result.status
+    return result
