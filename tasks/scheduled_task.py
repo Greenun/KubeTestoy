@@ -17,7 +17,15 @@ celery = Celery("periodic_tasks",
 @celery.task(name='periodic_tasks.health_check')
 def periodic_health_check():
     resp = health_check.ingress_health_check()
-    print(resp)
+    unconditionals = dict()
+    idx = 0
+    for i in resp:
+        if not resp.get('status') == 200:
+            unconditionals[str(idx)] = i
+            idx += 1
+    with requests.Session() as s:
+        # reqeust to web server
+        pass
 
 
 celery.conf.beat_schedule = {

@@ -20,8 +20,6 @@ def describe_ingress(name: str, namespace: str = "default", api_instance = None)
     ext_v1_beta = client.ExtensionsV1beta1Api() if not api_instance else api_instance
     resp = ext_v1_beta.read_namespaced_ingress(name=name, namespace=namespace)
     # resp = ext_v1_beta.list_ingress_for_all_namespaces()
-    # print(resp)
-    # print(type(resp))
     return resp
 
 
@@ -47,7 +45,7 @@ def create_deployment(project_name: str, images: list, ports: dict = {}, envs: d
             env=container_envs,
             readiness_probe=client.V1Probe(
                 initial_delay_seconds=10,
-                period_seconds=20,
+                period_seconds=15,
                 tcp_socket=client.V1TCPSocketAction(port=container_ports[0].container_port)
             ),
             image_pull_policy="Always" if tag == "latest" else "IfNotPresent"
@@ -122,11 +120,7 @@ def add_ingress_rules(name: str, project_name: str, service_port: int,  namespac
         ),
         path=f'/{project_hash}/(.*)'
     )
-    # print(dir(prev_ingress))
-    # print(prev_ingress.spec, type(prev_ingress.spec))
-    # print(type(prev_ingress.spec.rules))
     prev_ingress.spec.rules[0].http.paths.append(path_rule)
-    # print(prev_ingress)
 
     resp = ext_v1_beta.replace_namespaced_ingress(name=name, namespace=namespace, body=prev_ingress)
     # print(resp)
@@ -141,9 +135,6 @@ def remove_ingress_rules(name: str, project_name: str, namespace: str = "default
     ext_v1_beta = client.ExtensionsV1beta1Api()
     prev_ingress = describe_ingress(name=name)
 
-    # print(dir(prev_ingress))
-    # print(prev_ingress.spec, type(prev_ingress.spec))
-    # print(type(prev_ingress.spec.rules))
     path_rules = prev_ingress.spec.rules[0].http.paths
 
     target_idx = -1
@@ -206,8 +197,6 @@ def update_deployment(project_name: str, images: list, ports: dict = {}, envs: d
         for i, prev_image in enumerate(prev_images):
             if prev_image.split(":")[0] == image.split(":")[0]:
                 replace_patch.append((i, image))
-    # print(add_patch)
-    # print(replace_patch)
     v1 = client.AppsV1Api()
 
     for add_p in add_patch:
@@ -229,20 +218,6 @@ def update_deployment(project_name: str, images: list, ports: dict = {}, envs: d
             prev_deployment.spec.template.spec.containers[replace_p[0]].readiness_probe.initial_delay_seconds = now_is
         else:
             prev_deployment.spec.template.spec.containers[replace_p[0]].image = REGISTRY_PREFIX + replace_p[1]
-        # prev_deployment.spec.template.spec.containers[replace_p[0]].name = 'web-test-1'
-        # if replace_p[1].split(':')[1] == 'latest':
-        #     payload = {
-        #         'op': 'replace',
-        #         'path': f'/spec/template/spec/containers/{replace_p[0]}/name',
-        #         'value': 'web-test-1'
-        #     }
-        # else:
-        #     payload = {
-        #         'op': 'replace',
-        #         'path': f'/spec/template/spec/containers/{replace_p[0]}/image',
-        #         'value': replace_p[1]
-        #     }
-        # print(payload)
     # print(prev_deployment)
     resp = v1.patch_namespaced_deployment(
         name=deployment_name,
@@ -250,32 +225,6 @@ def update_deployment(project_name: str, images: list, ports: dict = {}, envs: d
         body=prev_deployment
     )
     return resp
-
-    # containers = list()
-    # for image in images:
-    #     name = image.split(":")[0]
-    #     tag = image.split(":")[1]
-    #     container_ports = [client.V1ContainerPort(p) for p in ports[image]] if ports and ports.get(image) else None
-    #     container_envs = [client.V1EnvVar(name=e.get("name"), value=e.get("value")) for e in envs.get(image)] \
-    #         if envs.get(image) else None
-    #     image = REGISTRY_PREFIX + image
-    #     containers.append(client.V1Container(
-    #         name=name,
-    #         image=image,
-    #         # ports=container_ports,
-    #         env=container_envs,
-    #         readiness_probe=None,
-    #         image_pull_policy="Always" if tag == "latest" else "IfNotPresent"
-    #     ))
-    # prev_deployment.spec.template.spec.containers = containers
-    # v1 = client.AppsV1Api()
-    # resp = v1.replace_namespaced_deployment(
-    #     name=f'{project_hash}-deployment',
-    #     namespace=namespace,
-    #     body=prev_deployment
-    # )
-    # print(resp)
-    # return resp
 
 
 def delete_sequence(project_name: str, namespace: str = "default"):
@@ -291,7 +240,7 @@ def create_sequence(project_name: str, images: list, ports: dict = {}, envs: dic
     service_resp = create_service(project_name, ports.get(images[0]))  # only one exposure image
     ingress_resp = add_ingress_rules(MAIN_INGRESS, project_name, 30000)  # default --> 30000
 
-    return ingress_resp
+    return deployment_resp
 
 
 if __name__ == '__main__':

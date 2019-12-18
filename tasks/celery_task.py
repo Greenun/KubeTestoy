@@ -4,10 +4,12 @@ sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 # print(sys.path)
 import config
-from kube_control import control
+from kube_control import control, health_check
 import requests
+import time
 
-
+PERIOD_TIME = 10
+MAX_RETRY = 1
 SERVER_URL = os.environ.get("SERVER_URL", "http://127.0.0.1:8000")
 celery = Celery("tasks",
                 broker=config.BROKER_URL,
@@ -16,10 +18,6 @@ celery = Celery("tasks",
 
 class CallbackTask(Task):
     def on_success(self, retval, task_id, args, kwargs):
-        # print(f"ret: {retval}")
-        # print(f"task_id: {task_id}")
-        # print(f"args: {args}")
-        # print(f"kwargs: {kwargs}")
         requests.get(f'{SERVER_URL}/check', params={
             'status': 'success',
             'id': task_id
@@ -51,6 +49,14 @@ def create_task(*args, **kwargs):
     envs = kwargs.get('envs')
 
     result = control.create_sequence(project_name, images, ports, envs)
+    for i in range(MAX_RETRY):
+        resp = health_check.http_health_check(project_name)
+        if resp.get('status') == 200:
+            with requests.Session() as s:
+                # request to web server!
+                pass
+            break
+        time.sleep(PERIOD_TIME)
     return result
 
 
@@ -60,4 +66,10 @@ def delete_task(*args, **kwargs):
     project_name = kwargs.get('project_name')
 
     result = control.delete_sequence(project_name)
+    resp = health_check.http_health_check(project_name)
+    if resp.get('status') == 404:
+        with requests.Session() as s:
+            # request to web server
+            pass
+
     return result
