@@ -88,3 +88,18 @@ def delete_task(*args, **kwargs):
     with requests.Session() as s:
         s.put('http://127.0.0.1:8000/test', json=ret)
     return ret
+
+@celery.task(name='periodic_tasks.health_check')
+def periodic_health_check():
+    resp = health_check.ingress_health_check()
+    unconditionals = dict()
+    idx = 0
+    for i in range(len(resp)):
+        if resp.get(str(i)).get('status') >= 400:
+            unconditionals[str(idx)] = i
+            idx += 1
+
+    with requests.Session() as s:
+        # reqeust to web server
+        s.put('http://127.0.0.1:8000/test', json=unconditionals)
+    return
