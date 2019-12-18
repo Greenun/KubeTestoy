@@ -8,8 +8,9 @@ from kube_control import control, health_check
 import requests
 import time
 
-PERIOD_TIME = 10
-MAX_RETRY = 1
+PERIOD_TIME = 20
+MAX_RETRY = 3
+URL_PREFIX = "http://34.97.132.189/"
 SERVER_URL = os.environ.get("SERVER_URL", "http://127.0.0.1:8000")
 celery = Celery("tasks",
                 broker=config.BROKER_URL,
@@ -37,7 +38,13 @@ def update_task(*args, **kwargs):
     images = kwargs.get('images')
 
     result = control.update_deployment(project_name, images)
-    return result
+
+    ret = {
+        'status': "success"
+    }
+    with requests.Session() as s:
+        s.put("http://127.0.0.1:8000/test", json=ret)
+    return ret
 
 
 @celery.task(name="tasks.create", base=CallbackTask)
@@ -49,15 +56,24 @@ def create_task(*args, **kwargs):
     envs = kwargs.get('envs')
 
     result = control.create_sequence(project_name, images, ports, envs)
+    ret = dict()
     for i in range(MAX_RETRY):
         resp = health_check.http_health_check(project_name)
         if resp.get('status') == 200:
-            with requests.Session() as s:
-                # request to web server!
-                pass
+            ret = {
+                # 'result': 'success',
+                'url': URL_PREFIX + resp.get('service'),
+                'status': "success"
+            }
             break
         time.sleep(PERIOD_TIME)
-    return result
+    if not ret:
+        ret = {
+            'status': 'failed'
+        }
+    with requests.Session() as s:
+        s.put("http://127.0.0.1:8000/test", json=ret)
+    return resp
 
 
 @celery.task(name="tasks.delete", base=CallbackTask)
@@ -66,10 +82,9 @@ def delete_task(*args, **kwargs):
     project_name = kwargs.get('project_name')
 
     result = control.delete_sequence(project_name)
-    resp = health_check.http_health_check(project_name)
-    if resp.get('status') == 404:
-        with requests.Session() as s:
-            # request to web server
-            pass
-
-    return result
+    ret = {
+        'status': result.status.lower()
+    }
+    with requests.Session() as s:
+        s.put('http://127.0.0.1:8000/test', json=ret)
+    return ret

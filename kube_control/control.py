@@ -33,7 +33,7 @@ def create_deployment(project_name: str, images: list, ports: dict = {}, envs: d
         name = image.split(":")[0]
         tag = image.split(":")[1]
         container_ports = [client.V1ContainerPort(p) for p in ports[image]] if ports and ports.get(image) else None
-        print(envs)
+        # print(envs)
         container_envs = [client.V1EnvVar(name=e.get("name"), value=e.get("value")) for e in envs.get(image)]\
             if envs.get(image) else None
         image = REGISTRY_PREFIX + image

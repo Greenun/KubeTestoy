@@ -117,10 +117,17 @@ def check():
     }
     if res.state == 'failed':
         ret['err_info']: res.err_info
-    print(res.state, res.result)
+    # print(res.state, res.result)
     # add request to web server -- good to separate to celery task
 
     return ret
+
+
+@app.route('/test', methods=['PUT'])
+def test():
+    data = request.json
+    print(data)
+    return 'test'
 
 
 if __name__ == '__main__':
