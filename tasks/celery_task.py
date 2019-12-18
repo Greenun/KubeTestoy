@@ -42,7 +42,7 @@ def update_task(*args, **kwargs):
     result = control.update_deployment(project_name, images)
 
     ret = {
-        'status': "success"
+        'status': "updated"
     }
     with requests.Session() as s:
         s.put(f"{config.BUILD_SERVER_URL}repo/{project_name}", json=ret)
@@ -64,7 +64,7 @@ def create_task(*args, **kwargs):
         if resp.get('status') == 200:
             ret = {
                 # 'result': 'success',
-                'url': URL_PREFIX + resp.get('service'),
+                'url': URL_PREFIX + resp.get('service') + '/',
                 'status': "success"
             }
             break
@@ -86,7 +86,7 @@ def delete_task(*args, **kwargs):
 
     result = control.delete_sequence(project_name)
     ret = {
-        'status': result.status.lower()
+        'status': 'deleted' if result.status.lower() == 'success' else result.status.lower()
     }
     with requests.Session() as s:
         s.put(f'{config.BUILD_SERVER_URL}repo/{project_name}', json=ret)

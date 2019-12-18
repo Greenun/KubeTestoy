@@ -15,6 +15,6 @@ celery = Celery("periodic_tasks",
 celery.conf.beat_schedule = {
     'periodic-health-check': {
         'task': 'periodic_tasks.health_check',
-        'schedule': 20.0
+        'schedule': 120.0
     }
 }

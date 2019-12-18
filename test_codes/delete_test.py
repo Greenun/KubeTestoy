@@ -2,10 +2,10 @@ import requests
 
 if __name__ == '__main__':
     payload = {
-        'project_name': 'my-test'
+        'project_name': 'test-app2'
     }
     with requests.Session() as s:
-        resp = s.post('http://127.0.0.1:8000/delete', json=payload)
+        resp = s.post('http://34.97.171.66/delete', json=payload)
         print(resp.text)
 
 
