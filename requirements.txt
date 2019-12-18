@@ -1,0 +1,4 @@
+kubernetes
+Flask
+celery
+redis
