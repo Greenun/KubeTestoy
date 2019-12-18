@@ -2,11 +2,13 @@ from celery import Celery, Task
 import os, sys
 sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
-# print(sys.path)
+
+
 import config
 from kube_control import control, health_check
 import requests
 import time
+
 
 PERIOD_TIME = 20
 MAX_RETRY = 3
@@ -43,7 +45,7 @@ def update_task(*args, **kwargs):
         'status': "success"
     }
     with requests.Session() as s:
-        s.put("http://127.0.0.1:8000/test", json=ret)
+        s.put(f"{config.BUILD_SERVER_URL}repo/{project_name}", json=ret)
     return ret
 
 
@@ -72,7 +74,8 @@ def create_task(*args, **kwargs):
             'status': 'failed'
         }
     with requests.Session() as s:
-        s.put("http://127.0.0.1:8000/test", json=ret)
+        # s.put("http://127.0.0.1:8000/test", json=ret)
+        s.put(f"{config.BUILD_SERVER_URL}repo/{project_name}", json=ret)
     return resp
 
 
@@ -86,8 +89,9 @@ def delete_task(*args, **kwargs):
         'status': result.status.lower()
     }
     with requests.Session() as s:
-        s.put('http://127.0.0.1:8000/test', json=ret)
+        s.put(f'{config.BUILD_SERVER_URL}repo/{project_name}', json=ret)
     return ret
+
 
 @celery.task(name='periodic_tasks.health_check')
 def periodic_health_check():
@@ -96,6 +100,10 @@ def periodic_health_check():
     idx = 0
     for i in range(len(resp)):
         if resp.get(str(i)).get('status') >= 400:
+            temp = {
+                'status': resp.get(str(i)).get('status'),
+                'url': resp.get(str(i)).get('service')
+            }
             unconditionals[str(idx)] = i
             idx += 1
 

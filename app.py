@@ -67,7 +67,7 @@ def delete():
     task = celery.send_task('tasks.delete', kwargs=payload)
     ret = {
         'status': 'proceeded',
-        'id': task.id
+        # 'id': task.id
     }
 
     return ret
